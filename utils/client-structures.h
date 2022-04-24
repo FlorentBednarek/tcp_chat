@@ -9,24 +9,6 @@
 #endif
 
 typedef struct {
-    long type; // 1
-    char username[100];
-    char message[100];
-} messageSignal;
-
-typedef struct {
-    long type; // 2
-    char username[100];
-    bool is_join;
-} moveSignal;
-
-typedef struct {
-    long type; // 3
-    int signal; // 0: STOP, 1: connected, 2: disconnected
-} stopSignal;
-
-
-typedef struct {
     long type;
     /*
         1: message sent

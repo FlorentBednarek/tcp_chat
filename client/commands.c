@@ -1,12 +1,12 @@
 #include "commands.h"
 
 void printHelp() {
-    printf("%s -> Log in to the server\n", LOGIN_COMMAND);
-    printf("%s -> Log out from the server\n", LOGOUT_COMMAND);
-    printf("%s -> Create an account\n", CREATE_ACCOUNT_COMMAND);
-    printf("%s -> Delete an account\n", DELETE_ACCOUNT_COMMAND);
-    printf("%s -> Get a list of connected users\n", LIST_COMMAND);
-    printf("%s -> Quit the program\n", EXIT_COMMAND);
+    printf("%s = Se connecter au serveur\n", LOGIN_COMMAND);
+    printf("%s = Se deconnecter au serveur\n", LOGOUT_COMMAND);
+    printf("%s = Créer un compte\n", CREATE_ACCOUNT_COMMAND);
+    printf("%s = Supprimer un compte\n", DELETE_ACCOUNT_COMMAND);
+    printf("%s = Afficher la liste des compte connecté\n", LIST_COMMAND);
+    printf("%s = Quitter le programme\n", EXIT_COMMAND);
 }
 
 int is_command(char* message, char* command){
@@ -74,7 +74,7 @@ void createAccount(char message[REQUEST_DATA_MAX_LENGTH], struct sockaddr_in adr
         if (request.type == 0) {
             printf("%s" "\n",request.data);
         } else { // Something went wrong
-            printf("Syntax: /create User Password\n");
+            printf("Syntaxe: :c nom mdp\n");
             printf("%s" "\n",request.data);
         }
     }
@@ -95,7 +95,7 @@ void deleteAccount(char message[REQUEST_DATA_MAX_LENGTH], struct sockaddr_in adr
         if(request.type == 0){
             printf("%s\n",request.data);
         }else{ //Something went wrong
-            printf("Syntax: /delete User Password\n");
+            printf("Syntaxe: :d nom mdp\n");
             printf("%s\n", request.data);
         }
     }
@@ -117,19 +117,19 @@ void connectedUsers(struct sockaddr_in adr_s, int udp_socket){
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg) > 0) {
         if (request.type == 0 && strlen(request.data) > 0) { // Display connected users
             /* Print users username */
-            printf("User 1: ");
+            printf("Utilisateur 1: ");
             for (size_t i = 0; i < strlen(request.data); i++)
             {
                 if (request.data[i] == '\t') {
                     counter++;
-                    printf("\nUser %d: ", counter);
+                    printf("\nUtilisateur %d: ", counter);
                 } else {
                     printf("%c", request.data[i]);
                 }
             }
             printf ("\n");
         } else if (request.type == 0) {
-            printf("Nobody is connected\n");
+            printf("Personne n'est connecté\n");
         } else { // Something went wrong
             printf("%s\n", request.data);
         }
@@ -139,12 +139,10 @@ void connectedUsers(struct sockaddr_in adr_s, int udp_socket){
 
 int commande_detection(char message[REQUEST_DATA_MAX_LENGTH], int* exit_status, char* token, int tcp_sock){
     /* ---UDP connection--- */
-    struct sockaddr_in adr_s, adr_c; //server and client addresses
-    unsigned int sock; //Socket
+    struct sockaddr_in adr_s, adr_c;
+    unsigned int sock;
 
     if (strlen(message) > 0 && message[0] == ':') {
-        /* Addresses init */
-        //Client init
         bzero(&adr_c,sizeof(adr_c));
         adr_c.sin_family = AF_INET; 
         adr_c.sin_port = htons(UDP_PORT);
@@ -155,29 +153,26 @@ int commande_detection(char message[REQUEST_DATA_MAX_LENGTH], int* exit_status, 
         adr_s.sin_port = htons(UDP_PORT);
         adr_s.sin_addr.s_addr = htonl(INADDR_ANY);
 
-        /* Socket creation and binding */
         sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
         bind(sock, (struct sockaddr *) &adr_c, sizeof(adr_c));
 
         if (is_command(message,LOGIN_COMMAND)) {
             if (strcmp(token,"") != 0) {
-                printf("You are already logged in" "\n");
+                printf("Vous êtes déjà connecté\n");
                 return 1;
             }
             if (message[strlen(LOGIN_COMMAND)] == '\0') {
-                printf("Syntax: /login MyUser MyPass" "\n");
+                printf("Syntaxe: :l nom mdp" "\n");
             } else {
-                //Necessite TCP_socket to send message
                 login(message,&(*token), adr_s, sock, tcp_sock);
             }
         } else if (is_command(message,LOGOUT_COMMAND)) {
-            //Necessite TCP_socket to send message
             logout(token, adr_s, sock, tcp_sock, exit_status);
         } else if (is_command(message,CREATE_ACCOUNT_COMMAND)) {
             createAccount(message,adr_s,sock);
         } else if (is_command(message,DELETE_ACCOUNT_COMMAND)) {
             if (strcmp(token, "") != 0) {
-                printf("You must be logged out to delete an account" "\n");
+                printf("Il faut être connecté pour supprimer un compte\n");
                 return 1;
             }
             deleteAccount(message,adr_s,sock);
@@ -188,7 +183,7 @@ int commande_detection(char message[REQUEST_DATA_MAX_LENGTH], int* exit_status, 
         } else if (is_command(message,HELP_COMMAND)) {
             printHelp();
         } else {
-            printf("Command not recognized\n");
+            printf("Commande inconnu\n");
         }
         return 1;
     }

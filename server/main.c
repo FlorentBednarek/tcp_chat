@@ -14,7 +14,7 @@ int sock_s;
 struct user *shared_memory; //Shared memory variable (connected users)
 
 static void handler(int sig, siginfo_t *info, void *ctx) {
-    printf("Received signal %s (%d)\n", get_signal_name(sig), sig);
+    printf("Signal %s (%d) reçu\n", get_signal_name(sig), sig);
     IS_RUNNING = false;
     sigaction(sig, &noaction, NULL);
     shutdown(sock_s, SHUT_RD);
@@ -98,16 +98,16 @@ void* message_receiver(void* args) {
                 }
             }
             if (memory_index == -1) { // No token correspondance found
-                tcpData msg = {7, "", "You need to log in to send messages!"};
+                tcpData msg = {7, "", "Il faut se connecter pour envoyer un message!"};
                 send(sock_c, &msg, sizeof(msg), 0);
             } else {
-                tcpData msg = {5, "", "You have been successfully connected!"};
+                tcpData msg = {5, "", "Connection réussi!"};
                 send(sock_c, &msg, sizeof(msg), 0);
             }
         } else { //User connected
-            if (strcmp(message, "/logout") == 0) { // Logout
+            if (strcmp(message, ":o") == 0) { // Logout
                 /* Sending /logout to disconnect client too */
-                tcpData msg = {6, "", "/logout"};
+                tcpData msg = {6, "", ":o"};
                 send(sock_c, &msg, sizeof(msg), 0);
                 break;
             }
@@ -116,7 +116,7 @@ void* message_receiver(void* args) {
             broadcastMessage(message, (*arguments).shared_memory, memory_index);
         }
     }
-    printf("[client_thread] - Closing TCP connexion %d\n", memory_index);
+    printf("[Thread-client] - Fermeture de la connection TCP %d\n", memory_index);
     /* Close the connection and exit */
     close(sock_c);
     if (memory_index != -1 && (*arguments).shared_memory[memory_index].sock == sock_c) { // Check if still connected then clear the shared_memory
@@ -149,19 +149,19 @@ void *communication(void* args){
 
     /* Server init */
     if (bind(sock_s, (struct sockaddr *)&adr_s, sizeof(adr_s)) == -1){
-        perror("[Communication] - Cannot bind server");
+        perror("[Communication] - Echec liaison serveur");
         exit(EXIT_FAILURE);
     }
 
     if (listen(sock_s ,REQUEST_DATA_MAX_LENGTH) == -1){
-        perror("[Communication] - listening failed");
+        perror("[Communication] - Echec liaison");
         exit(EXIT_FAILURE);
     }
 
     while (IS_RUNNING) {
         /* Waiting a connection */
         if ((sock_c = accept(sock_s, (struct sockaddr*) NULL, NULL)) < 0 && IS_RUNNING)
-            perror("[Communication] - Accept failed");
+            perror("[Communication] - Echec authorisation");
         if (!IS_RUNNING)
             break;
         
@@ -170,11 +170,11 @@ void *communication(void* args){
         thread_infos.shared_memory = shared_memory;
         thread_infos.sock_c = sock_c;
 
-        printf("[Communication] - Creation message receiver thread...");
+        printf("[Communication] - Creation thread de reception des messages...");
         if (pthread_create(&client_thread, NULL, message_receiver, &thread_infos)) // Thread creation
-            perror("[Client_thread] - Error during thread creation");
+            perror("[Client_thread] - Erreur durant la creation du thread");
         else
-            printf("Created\n");
+            printf("Réussi\n");
     }
 
     /* Properly end the communication thread */
@@ -224,29 +224,29 @@ void *request_manager(void* args){
 
             switch (request.type){
                 case 1: //log in
-                    printf("[Request_manager] - Log in thread creation...\n");
+                    printf("[Manager de requete] - Creation de thread de connection...\n");
                     thread_function = login; // function for log in
                     break;
                 case -1://log out
-                    printf("[Request_manager] - Log out thread creation...\n");
+                    printf("[Manager de requete] - Creation de thread de deconnection...\n");
                     thread_function = logout; // function for log out
                     break;
                 case 2://creation of account
-                    printf("[Request_manager] - Account-creation thread creation...\n");
+                    printf("[Manager de requete] - Creation de thread de creation de comptes\n");
                     thread_function = account_creation; // function for create an account
                     break;
                 case -2://deletion of account
-                    printf("[Request_manager] - Account-deletion thread creation...\n");
+                    printf("[Manager de requete] - Creation de thread de suppression de comptes...\n");
                     thread_function = account_deletion; // function for delete an account
                     break;
                 default://connected users list
-                    printf("[Request_manager] - connected_users thread creation...\n");
+                    printf("[Manager de requete] - Creation de thread d'affichage des comptes connecté...\n");
                     thread_function = connected_users; // function send list of connected users
                     break;
             }
             /* Thread creation for request treatment */
             if (pthread_create( &request_thread, NULL, thread_function, &arguments))
-                printf("\nError during request_thread creation\n");
+                printf("\nErreur durant la creation du request_thread\n");
             else
                 pthread_detach(request_thread);
         }
@@ -278,22 +278,22 @@ int main(int argc, char const *argv[])
     }
     
     /* Communication thread creation */
-    printf("Creation communication thread... ");
+    printf("Creation du thread de communication.. ");
     if (pthread_create(&com, NULL, communication, (void*)shared_memory)) {
-        printf("\nError during thread creation\n");
+        printf("\nEreeur lors de la creation du thread\n");
         exit(EXIT_FAILURE);
     } else
-        printf("Created\n");
+        printf("Réussi\n");
 
     /* Request manager thread creation */
-    printf("Creation request thread... ");
+    printf("Creation du thread de requetes... ");
     if (pthread_create(&req, NULL, request_manager, (void*)shared_memory)) {
-        printf("\nError during thread creation\n");
+        printf("\nEreeur lors de la creation du thread\n");
         exit(EXIT_FAILURE);
     } else
-        printf("Created\n");
+        printf("Réussi\n");
     
-    printf("Server is ready to serve!\n");
+    printf("Le serveur est prêt ! ...\n");
 
     /* Join communication and request manager threads */
     pthread_join(com, NULL);
@@ -302,6 +302,6 @@ int main(int argc, char const *argv[])
     /* Unmap shared_memory */
     munmap(shared_memory, MAX_USERS_CONNECTED*sizeof(char*));
 
-    printf("Server finished.\n");
+    printf("Serveur eteint\n");
     return 0;
 }
