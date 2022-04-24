@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../utils/utils.h"
-#include "../utils/request.h"
 #include <string.h>
+#include "../utils/request.h"
+#include "../utils/utils.h"
 
 #define LOGIN_COMMAND ":l"
 #define LOGOUT_COMMAND ":o"

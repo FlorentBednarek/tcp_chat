@@ -20,19 +20,16 @@ int is_command(char* message, char* command){
 void login(char message[REQUEST_DATA_MAX_LENGTH],char* token, struct sockaddr_in adr_s, int udp_socket, int tcp_socket){
     struct request request;
     unsigned int lg = sizeof(adr_s);
-    /* Building request */
     request.type = 1;
     strcpy(request.data,&message[strlen(LOGIN_COMMAND)+1]);
 
-    /* Log in request (UDP) */
-    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s)); 
+    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s));
 
-    /* Receiving token */
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg) > 0) {
-        if (request.type == 0) { // Send token to tcp server
+        if (request.type == 0) {
             strcpy(token, request.data);
             write(tcp_socket, request.data, strlen(request.data));
-        } else { // Wrong username/login
+        } else {
             printf("%s\n", request.data);
         }
     }
@@ -41,19 +38,16 @@ void login(char message[REQUEST_DATA_MAX_LENGTH],char* token, struct sockaddr_in
 void logout(char* token, struct sockaddr_in adr_s, int udp_socket, int tcp_socket, int* exit_status){
     struct request request;
     unsigned int lg = sizeof(adr_s);
-    /* Building request */
     request.type = -1;
     strcpy(request.data,token);
 
-    /* Send request */
     sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s));
 
-    /* Receiving confirmation */
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg) > 0) {
-        if (request.type == 0) { //Send deconnection to tcp server
+        if (request.type == 0) {
             write(tcp_socket, LOGOUT_COMMAND, strlen(LOGOUT_COMMAND));
             *exit_status = 1;
-        } else { // Wrong token
+        } else {
             printf("%s\n", request.data);
         }
     }
@@ -62,18 +56,15 @@ void logout(char* token, struct sockaddr_in adr_s, int udp_socket, int tcp_socke
 void createAccount(char message[REQUEST_DATA_MAX_LENGTH], struct sockaddr_in adr_s, int udp_socket){
     struct request request;
     unsigned int lg = sizeof(adr_s);
-    /* Building request */
     request.type = 2;
     strcpy(request.data,&message[strlen(CREATE_ACCOUNT_COMMAND)+1]);
 
-    /* Log in request (UDP) */
-    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s)); 
+    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s));
 
-    /* Receiving token */
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg)>0){
         if (request.type == 0) {
             printf("%s" "\n",request.data);
-        } else { // Something went wrong
+        } else {
             printf("Syntaxe: :c nom mdp\n");
             printf("%s" "\n",request.data);
         }
@@ -83,18 +74,15 @@ void createAccount(char message[REQUEST_DATA_MAX_LENGTH], struct sockaddr_in adr
 void deleteAccount(char message[REQUEST_DATA_MAX_LENGTH], struct sockaddr_in adr_s, int udp_socket){
     struct request request;
     unsigned int lg = sizeof(adr_s);
-    /* Building request */
     request.type = -2;
     strcpy(request.data,&message[strlen(DELETE_ACCOUNT_COMMAND)+1]);
 
-    /* Log in request (UDP) */
-    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s)); 
+    sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s));
 
-    /* Receiving token */
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg)>0){
         if(request.type == 0){
             printf("%s\n",request.data);
-        }else{ //Something went wrong
+        }else {
             printf("Syntaxe: :d nom mdp\n");
             printf("%s\n", request.data);
         }
@@ -106,17 +94,13 @@ void connectedUsers(struct sockaddr_in adr_s, int udp_socket){
     unsigned int lg = sizeof(adr_s);
     int counter = 1;
 
-    /* Building request */
     request.type = 0;
     strcpy(request.data,"");
 
-    /* Send request */
     sendto (udp_socket, (void *) &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, sizeof(adr_s));
 
-    /* Receiving list */
     if (recvfrom (udp_socket, &request, sizeof(struct request), 0, (struct sockaddr *) &adr_s, &lg) > 0) {
-        if (request.type == 0 && strlen(request.data) > 0) { // Display connected users
-            /* Print users username */
+        if (request.type == 0 && strlen(request.data) > 0) {
             printf("Utilisateur 1: ");
             for (size_t i = 0; i < strlen(request.data); i++)
             {
@@ -130,7 +114,7 @@ void connectedUsers(struct sockaddr_in adr_s, int udp_socket){
             printf ("\n");
         } else if (request.type == 0) {
             printf("Personne n'est connecté\n");
-        } else { // Something went wrong
+        } else {
             printf("%s\n", request.data);
         }
     }
@@ -138,7 +122,6 @@ void connectedUsers(struct sockaddr_in adr_s, int udp_socket){
 }
 
 int commande_detection(char message[REQUEST_DATA_MAX_LENGTH], int* exit_status, char* token, int tcp_sock){
-    /* ---UDP connection--- */
     struct sockaddr_in adr_s, adr_c;
     unsigned int sock;
 
@@ -147,7 +130,6 @@ int commande_detection(char message[REQUEST_DATA_MAX_LENGTH], int* exit_status, 
         adr_c.sin_family = AF_INET; 
         adr_c.sin_port = htons(UDP_PORT);
         adr_c.sin_addr.s_addr = htonl(INADDR_ANY);
-        //Server init
         bzero(&adr_s,sizeof(adr_s));
         adr_s.sin_family = AF_INET;
         adr_s.sin_port = htons(UDP_PORT);

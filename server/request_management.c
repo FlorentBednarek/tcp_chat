@@ -10,7 +10,7 @@ void *login(void* args){
     char data[REQUEST_DATA_MAX_LENGTH];
     strcpy(data,(*parent_info).request.data);
 
-    printf("\t[Login-thread] - Received data (length : %ld): %s\n", strlen(data), data); //Log
+    printf("\tLogin-thread - Received data (length : %ld): %s\n", strlen(data), data); //Log
 
     for (separator_pos = 0; separator_pos < strlen(data) && data[separator_pos] != USER_PASSWORD_REQUEST_SEPARATOR; separator_pos++);
 
@@ -67,7 +67,7 @@ void *logout(void* args){
         strcpy((*parent_info).request.data,"The token doesn't have the right format");
         sendto ((*parent_info).sock, (void *) &(*parent_info).request, sizeof(struct request), 0, (struct sockaddr *) &(*parent_info).adr_client, sizeof((*parent_info).adr_client)); 
     }
-    printf("[Logout-thread] - Received data (length : %ld): %s\n", strlen(token), token);
+    printf("Logout-thread - Received data (length : %ld): %s\n", strlen(token), token);
     strcpy(token,(*parent_info).request.data);
 
     switch (remove_user((*parent_info).shared_memory,token)){
@@ -93,7 +93,7 @@ void *account_creation(void* args){
     char data[REQUEST_DATA_MAX_LENGTH];
     strcpy(data,(*parent_info).request.data);
 
-    printf("[Account_creation-thread] - Received data (length : %ld): %s\n", strlen(data), data);
+    printf("Account_creation-thread - Received data (length : %ld): %s\n", strlen(data), data);
 
     for (separator_pos = 0; separator_pos < strlen(data) && data[separator_pos] != USER_PASSWORD_REQUEST_SEPARATOR; separator_pos++);
 
@@ -133,7 +133,7 @@ void *account_deletion(void* args){
     char data[REQUEST_DATA_MAX_LENGTH];
     strcpy(data,(*parent_info).request.data);
 
-    printf("[Account_deletion-thread] - Received data (length : %ld): %s\n", strlen(data), data);
+    printf("Account_deletion-thread - Received data (length : %ld): %s\n", strlen(data), data);
     for (separator_pos = 0; separator_pos < strlen(data) && data[separator_pos] != USER_PASSWORD_REQUEST_SEPARATOR; separator_pos++);
     if (separator_pos >= MAX_USER_USERNAME_LENGTH || strlen(data)-separator_pos > MAX_USER_PASSWORD_LENGTH){
         (*parent_info).request.type = -1;
@@ -176,7 +176,7 @@ void *connected_users(void* args){
     char connected_list[REQUEST_DATA_MAX_LENGTH];
     strcpy(connected_list,"");
     int bool_empty_list = 1;
-    printf("[Connected_users-thread] - Received data (length : %ld): %s\n", strlen((*parent_info).request.data), (*parent_info).request.data);
+    printf("Connected_users-thread - Received data (length : %ld): %s\n", strlen((*parent_info).request.data), (*parent_info).request.data);
     for (size_t i = 0; i < MAX_USERS_CONNECTED; i++)
     {
         if (strcmp((*parent_info).shared_memory[i].username,"") != 0){
